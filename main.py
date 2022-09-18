@@ -212,5 +212,5 @@ async def generate(
 ```"""
     )
 
-
-bot.run(open("token.txt", "r"))
+with open("token.txt", "r") as token:
+    bot.run(token.read())
