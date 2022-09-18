@@ -213,4 +213,4 @@ async def generate(
     )
 
 
-bot.run("MTAxNTc0OTMxMTcyMTY1NjQ4MQ.Gv7aO4.G7qDOOuOIOdiP7RYMkgomUwpNsL52vW32KL21M")
+bot.run("MTAxNTc0OTMxMTcyMTY1NjQ4MQ.G_uT-L.VWI9LYOy1_uaJ2j5H9uZbPV3scvguVVMxf_v5o")
