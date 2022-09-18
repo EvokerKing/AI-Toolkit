@@ -213,4 +213,4 @@ async def generate(
     )
 
 
-bot.run("MTAxNTc0OTMxMTcyMTY1NjQ4MQ.G_uT-L.VWI9LYOy1_uaJ2j5H9uZbPV3scvguVVMxf_v5o")
+bot.run(open("token.txt", "r"))
