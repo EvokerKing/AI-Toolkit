@@ -153,11 +153,15 @@ async def summarize(
         ),
         maxLength: int = SlashOption(
             name="maximumlength",
-            description="The maximum length of the summarized text"
+            description="The maximum length of the summarized text",
+            required=False,
+            default=130
         ),
         minLength: int = SlashOption(
             name="minimumlength",
-            description="The minimum length of the summarized text"
+            description="The minimum length of the summarized text",
+            required=False,
+            default=30
         )
 ):
     interactionResponse = ctx.response
@@ -198,11 +202,15 @@ async def generate(
         ),
         maxLength: int = SlashOption(
             name="maxlength",
-            description="The maximum length of the generated text"
+            description="The maximum length of the generated text",
+            required=False,
+            default=None
         )
 ):
     interactionResponse = ctx.response
     await interactionResponse.defer(ephemeral=False, with_message=True)
+    if maxLength == None:
+        maxLength = len(text)+50
     transformers.set_seed(random.randint(0, 99))
     generated = textgenerator(text, max_length=maxLength, num_return_sequences=1)[0]["generated_text"]
     generated = generated.replace(f"{text}", "")
