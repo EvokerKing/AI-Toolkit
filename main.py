@@ -191,14 +191,20 @@ async def summarize(
 
 @bot.slash_command(
     name="generate",
-    description="Generates text to extend the text you input",
+    description="Generates text to add on to the text you input",
     dm_permission=True
 )
 async def generate(
         ctx: Interaction,
         text: str = SlashOption(
             name="text",
-            description="The text to extend"
+            description="The text to add on to"
+        ),
+        seed: int = SlashOption(
+            name="seed",
+            description="The seed used to generate the text",
+            required=False,
+            default=None
         ),
         maxLength: int = SlashOption(
             name="maxlength",
@@ -211,13 +217,20 @@ async def generate(
     await interactionResponse.defer(ephemeral=False, with_message=True)
     if maxLength == None:
         maxLength = len(text)+50
-    transformers.set_seed(random.randint(0, 99))
+    if seed == None:
+        usedSeed = random.randint(0, 99)
+    else:
+        usedSeed = seed
+    transformers.set_seed(usedSeed)
     generated = textgenerator(text, max_length=maxLength, num_return_sequences=1)[0]["generated_text"]
     generated = generated.replace(f"{text}", "")
+    embed = Embed()
+    embed.add_field(name="Seed:", value=usedSeed)
     await ctx.send(
         f"""```ansi
 {text}[2;40m[2;34m[2;41m[2;45m[2;30m[2;37m[2;47m[2;30m{generated}[0m[2;37m[2;47m[0m[2;37m[2;45m[0m[2;30m[2;45m[0m[2;34m[2;45m[0m[2;34m[2;41m[0m[2;34m[2;40m[0m[2;40m[0m
-```"""
+```""",
+        embed=embed
     )
 
 with open("token.txt", "r") as token:
