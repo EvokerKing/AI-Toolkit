@@ -234,7 +234,8 @@ async def generate(
     interactionResponse = ctx.response
     await interactionResponse.defer(ephemeral=False, with_message=True)
     if maxLength == None:
-        maxLength = len(text)+50
+        maxLength = text.split(" ")
+        maxLength = len(maxLength) + 50
     if seed == None:
         usedSeed = random.randint(0, 99)
     else:
@@ -257,7 +258,7 @@ async def generate(
         pass
     elif view.value:
         newMsg = await msg.reply("Generating")
-        maxLength = len(text) + len(generated) + 50
+        maxLength = maxLength + 50
         newGenerated = textgenerator(text+generated, max_length=maxLength, num_return_sequences=1)[0]["generated_text"]
         newGenerated = newGenerated.replace(f"{text+generated}", "")
         await newMsg.edit(
