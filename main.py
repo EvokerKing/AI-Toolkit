@@ -242,30 +242,35 @@ async def generate(
         usedSeed = seed
     transformers.set_seed(usedSeed)
     generated = textgenerator(text, max_length=maxLength, num_return_sequences=1)[0]["generated_text"]
-    generated = generated.replace(f"{text}", "")
-    view = Generate()
-    embed = Embed()
-    embed.add_field(name="Seed:", value=usedSeed)
-    msg = await ctx.send(
-        f"""```ansi
-{text}[2;40m[2;34m[2;41m[2;45m[2;30m[2;37m[2;47m[2;30m{generated}[0m[2;37m[2;47m[0m[2;37m[2;45m[0m[2;30m[2;45m[0m[2;34m[2;45m[0m[2;34m[2;41m[0m[2;34m[2;40m[0m[2;40m[0m
-```""",
-        embed=embed,
-        view=view
-    )
-    await view.wait()
-    if view.value is None:
-        pass
-    elif view.value:
-        newMsg = await msg.reply("Generating")
-        maxLength += 50
-        newGenerated = textgenerator(text+generated, max_length=maxLength, num_return_sequences=1)[0]["generated_text"]
-        newGenerated = newGenerated.replace(f"{text+generated}", "")
-        await newMsg.edit(
+    if len(generated) > 1811:
+        await ctx.send("""```ansi
+[2;31m[1;31mReturned text is more than 1811 characters. Did not execute.[0m[2;31m[0m
+```""")
+    else:
+        generated = generated.replace(f"{text}", "")
+        view = Generate()
+        embed = Embed()
+        embed.add_field(name="Seed:", value=usedSeed)
+        msg = await ctx.send(
             f"""```ansi
-{text+generated}[2;40m[2;34m[2;41m[2;45m[2;30m[2;37m[2;47m[2;30m{newGenerated}[0m[2;37m[2;47m[0m[2;37m[2;45m[0m[2;30m[2;45m[0m[2;34m[2;45m[0m[2;34m[2;41m[0m[2;34m[2;40m[0m[2;40m[0m
-```"""
+    {text}[2;40m[2;34m[2;41m[2;45m[2;30m[2;37m[2;47m[2;30m{generated}[0m[2;37m[2;47m[0m[2;37m[2;45m[0m[2;30m[2;45m[0m[2;34m[2;45m[0m[2;34m[2;41m[0m[2;34m[2;40m[0m[2;40m[0m
+    ```""",
+            embed=embed,
+            view=view
         )
+        await view.wait()
+        if view.value is None:
+            pass
+        elif view.value:
+            newMsg = await msg.reply("Generating")
+            maxLength += 50
+            newGenerated = textgenerator(text+generated, max_length=maxLength, num_return_sequences=1)[0]["generated_text"]
+            newGenerated = newGenerated.replace(f"{text+generated}", "")
+            await newMsg.edit(
+                f"""```ansi
+    {text+generated}[2;40m[2;34m[2;41m[2;45m[2;30m[2;37m[2;47m[2;30m{newGenerated}[0m[2;37m[2;47m[0m[2;37m[2;45m[0m[2;30m[2;45m[0m[2;34m[2;45m[0m[2;34m[2;41m[0m[2;34m[2;40m[0m[2;40m[0m
+    ```"""
+            )
 
 with open("token.txt", "r") as token:
     bot.run(token.read())
