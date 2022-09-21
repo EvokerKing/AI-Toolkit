@@ -258,7 +258,7 @@ async def generate(
         pass
     elif view.value:
         newMsg = await msg.reply("Generating")
-        maxLength = maxLength + 50
+        maxLength += 50
         newGenerated = textgenerator(text+generated, max_length=maxLength, num_return_sequences=1)[0]["generated_text"]
         newGenerated = newGenerated.replace(f"{text+generated}", "")
         await newMsg.edit(
