@@ -122,22 +122,21 @@ async def fillmask(
     interactionResponse = ctx.response
     await interactionResponse.defer(with_message=True)
     if mask.endswith("[MASK]"):
-        await ctx.send("Please add a period `.` to the end of your sentence", ephemeral=True)
-    else:
-        from transformers.pipelines import PipelineException
-        try:
-            response = unmasker(mask)[0]
-            mostCommonResponse = response["token_str"]
-            mostCommonResponseScore = response["score"]
-            fullStr = mask.replace("[MASK]", mostCommonResponse)
-            scorePercent = str(round(mostCommonResponseScore * 100)) + "%"
-            embed = Embed(title="Fill-mask generation complete:")
-            embed.add_field(name="Original:", value=f"{mask}", inline=False)
-            embed.add_field(name="AI generated:", value=f"\"{fullStr}\"", inline=True)
-            embed.add_field(name="Score:", value=f"{scorePercent}", inline=True)
-            await ctx.send(embed=embed)
-        except PipelineException:
-            await ctx.send("The [MASK] token could not be found in the text", ephemeral=True)
+        mask += "."
+    from transformers.pipelines import PipelineException
+    try:
+        response = unmasker(mask)[0]
+        mostCommonResponse = response["token_str"]
+        mostCommonResponseScore = response["score"]
+        fullStr = mask.replace("[MASK]", mostCommonResponse)
+        scorePercent = str(round(mostCommonResponseScore * 100)) + "%"
+        embed = Embed(title="Fill-mask generation complete:")
+        embed.add_field(name="Original:", value=f"{mask}", inline=False)
+        embed.add_field(name="AI generated:", value=f"\"{fullStr}\"", inline=True)
+        embed.add_field(name="Score:", value=f"{scorePercent}", inline=True)
+        await ctx.send(embed=embed)
+    except PipelineException:
+        await ctx.send("The [MASK] token could not be found in the text", ephemeral=True)
 
 
 @bot.slash_command(
