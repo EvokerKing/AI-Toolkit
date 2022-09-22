@@ -205,6 +205,18 @@ class Generate(ui.View):
         self.value = True
         self.stop()
 
+    @ui.button(
+        label="Variate",
+        style=ButtonStyle.green
+    )
+    async def variate(
+            self,
+            button: ui.Button,
+            ctx: Interaction
+    ):
+        self.value = False
+        self.stop()
+
 
 @bot.slash_command(
     name="generate",
@@ -252,8 +264,8 @@ async def generate(
         embed.add_field(name="Seed:", value=usedSeed)
         msg = await ctx.send(
             f"""```ansi
-    {text}[2;40m[2;34m[2;41m[2;45m[2;30m[2;37m[2;47m[2;30m{generated}[0m[2;37m[2;47m[0m[2;37m[2;45m[0m[2;30m[2;45m[0m[2;34m[2;45m[0m[2;34m[2;41m[0m[2;34m[2;40m[0m[2;40m[0m
-    ```""",
+{text}[2;40m[2;34m[2;41m[2;45m[2;30m[2;37m[2;47m[2;30m{generated}[0m[2;37m[2;47m[0m[2;37m[2;45m[0m[2;30m[2;45m[0m[2;34m[2;45m[0m[2;34m[2;41m[0m[2;34m[2;40m[0m[2;40m[0m
+```""",
             embed=embed,
             view=view
         )
@@ -269,6 +281,20 @@ async def generate(
                 f"""```ansi
     {text+generated}[2;40m[2;34m[2;41m[2;45m[2;30m[2;37m[2;47m[2;30m{newGenerated}[0m[2;37m[2;47m[0m[2;37m[2;45m[0m[2;30m[2;45m[0m[2;34m[2;45m[0m[2;34m[2;41m[0m[2;34m[2;40m[0m[2;40m[0m
     ```"""
+            )
+        elif view.value == False:
+            newMsg = await msg.reply("Generating")
+            seed = random.randint(0, 99)
+            transformers.set_seed(seed)
+            newGenerated = textgenerator(text, max_length=maxLength, num_return_sequences=1)[0]["generated_text"]
+            newGenerated = newGenerated.replace(f"{text}", "")
+            embed = Embed()
+            embed.add_field(name="Seed:", value=seed)
+            await newMsg.edit(
+                f"""```ansi
+{text}[2;40m[2;34m[2;41m[2;45m[2;30m[2;37m[2;47m[2;30m{newGenerated}[0m[2;37m[2;47m[0m[2;37m[2;45m[0m[2;30m[2;45m[0m[2;34m[2;45m[0m[2;34m[2;41m[0m[2;34m[2;40m[0m[2;40m[0m
+```""",
+            embed=embed
             )
 
 with open("token.txt", "r") as token:
