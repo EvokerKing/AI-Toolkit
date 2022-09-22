@@ -5,29 +5,38 @@ import random
 import airtable as at
 import glob
 import pickle
+from detoxify import Detoxify
 
 models = glob.glob("models/*")
 
+unmaskerfile = open("models/unmasker.aimodel", "w+b")
+summarizerfile = open("models/summarizer.aimodel", "w+b")
+textgeneratorfile = open("models/textgenerator.aimodel", "w+b")
+toxicfile = open("models/toxic.aimodel", "w+b")
+
 if "models/unmasker.aimodel" in models:
-    unmasker = pickle.load("models/unmasker.aimodel")
+    unmasker = pickle.load(unmaskerfile)
 else:
     unmasker = transformers.pipeline("fill-mask", model="bert-base-uncased")
-    unmaskerfile = open("models/unmasker.aimodel", "w+b")
     pickle.dump(unmasker, unmaskerfile)
 
 if "models/summarizer.aimodel" in models:
-    summarizer = pickle.load("models/summarizer.aimodel")
+    summarizer = pickle.load(summarizerfile)
 else:
     summarizer = transformers.pipeline("summarization", model="facebook/bart-large-cnn")
-    summarizerfile = open("models/summarizer.aimodel", "w+b")
     pickle.dump(summarizer, summarizerfile)
 
 if "models/textgenerator.aimodel" in models:
-    textgenerator = pickle.load("models/textgenerator.aimodel")
+    textgenerator = pickle.load(textgeneratorfile)
 else:
     textgenerator = transformers.pipeline("text-generation", model="gpt2")
-    textgeneratorfile = open("models/textgenerator.aimodel", "w+b")
     pickle.dump(textgenerator, textgeneratorfile)
+
+if "models/toxic.aimodel" in models:
+    toxic = pickle.load(toxicfile)
+else:
+    toxic = Detoxify("original")
+    pickle.dump(toxic, toxicfile)
 
 db = at.Airtable('appWlNWcMJ1Yj3qCQ', 'keylqCeR5Mr62P71A')
 
@@ -244,10 +253,10 @@ async def generate(
 ):
     interactionResponse = ctx.response
     await interactionResponse.defer(ephemeral=False, with_message=True)
-    if maxLength == None:
+    if maxLength is None:
         maxLength = text.split(" ")
         maxLength = len(maxLength) + 50
-    if seed == None:
+    if seed is None:
         usedSeed = random.randint(0, 99)
     else:
         usedSeed = seed
@@ -282,7 +291,7 @@ async def generate(
     {text+generated}[2;40m[2;34m[2;41m[2;45m[2;30m[2;37m[2;47m[2;30m{newGenerated}[0m[2;37m[2;47m[0m[2;37m[2;45m[0m[2;30m[2;45m[0m[2;34m[2;45m[0m[2;34m[2;41m[0m[2;34m[2;40m[0m[2;40m[0m
     ```"""
             )
-        elif view.value == False:
+        elif not view.value:
             newMsg = await msg.reply("Generating")
             seed = random.randint(0, 99)
             transformers.set_seed(seed)
@@ -294,8 +303,40 @@ async def generate(
                 f"""```ansi
 {text}[2;40m[2;34m[2;41m[2;45m[2;30m[2;37m[2;47m[2;30m{newGenerated}[0m[2;37m[2;47m[0m[2;37m[2;45m[0m[2;30m[2;45m[0m[2;34m[2;45m[0m[2;34m[2;41m[0m[2;34m[2;40m[0m[2;40m[0m
 ```""",
-            embed=embed
+                embed=embed
             )
+
+
+@bot.slash_command(
+    name="toxic",
+    description="Tells you how toxic a message is",
+    dm_permission=True
+)
+async def toxiccmd(
+        ctx: Interaction,
+        text: str = SlashOption(
+            name="text",
+            description="The text to classify"
+        )
+):
+    interactionResponse = ctx.response
+    await interactionResponse.defer(ephemeral=False, with_message=True)
+    result = toxic.predict(text)
+    toxicity = str(round(result["toxicity"] * 100)) + "%"
+    severe = str(round(result["severe_toxicity"] * 100)) + "%"
+    obscene = str(round(result["obscene"] * 100)) + "%"
+    threat = str(round(result["threat"] * 100)) + "%"
+    insult = str(round(result["insult"] * 100)) + "%"
+    identity = str(round(result["identity_attack"] * 100)) + "%"
+    embed = Embed(title="Classification done:")
+    embed.add_field(name="Original", value=f"{text}", inline=False)
+    embed.add_field(name="Toxicity:", value=f"{toxicity}", inline=True)
+    embed.add_field(name="Severe Toxicity:", value=f"{severe}", inline=True)
+    embed.add_field(name="Obscene:", value=f"{obscene}", inline=True)
+    embed.add_field(name="Threat:", value=f"{threat}", inline=True)
+    embed.add_field(name="Insult:", value=f"{insult}", inline=True)
+    embed.add_field(name="Identity Attack:", value=f"{identity}", inline=True)
+    await ctx.send(embed=embed)
 
 with open("token.txt", "r") as token:
     bot.run(token.read())
