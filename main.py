@@ -13,6 +13,7 @@ unmaskerfile = open("models/unmasker.aimodel", "w+b")
 summarizerfile = open("models/summarizer.aimodel", "w+b")
 textgeneratorfile = open("models/textgenerator.aimodel", "w+b")
 toxicfile = open("models/toxic.aimodel", "w+b")
+classifierfile = open("models/classifier.aimodel", "w+b")
 
 if "models/unmasker.aimodel" in models:
     unmasker = pickle.load(unmaskerfile)
@@ -37,6 +38,12 @@ if "models/toxic.aimodel" in models:
 else:
     toxic = Detoxify("original")
     pickle.dump(toxic, toxicfile)
+
+if "models/classifier.aimodel" in models:
+    classifier = pickle.load(classifierfile)
+else:
+    classifier = transformers.pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+    pickle.dump(classifier, classifierfile)
 
 db = at.Airtable('appWlNWcMJ1Yj3qCQ', 'keylqCeR5Mr62P71A')
 
@@ -337,6 +344,40 @@ async def toxiccmd(
     embed.add_field(name="Insult:", value=f"{insult}", inline=True)
     embed.add_field(name="Identity Attack:", value=f"{identity}", inline=True)
     await ctx.send(embed=embed)
+
+
+@bot.slash_command(
+    name="classifier",
+    description="Classifies text into different categories",
+    dm_permission=True
+)
+async def classifiercmd(
+        ctx: Interaction,
+        text: str = SlashOption(
+            name="text",
+            description="The text to classify"
+        ),
+        tags: str = SlashOption(
+            name="tags",
+            description="The tags to classify the text with. SEPARATE WITH COMMAS"
+        )
+):
+    interactionResponse = ctx.response
+    await interactionResponse.defer(ephemeral=False, with_message=True)
+    tagsNoStrip = tags.split(',')
+    tags = []
+    for tag in tagsNoStrip:
+        tags.append(tag.strip())
+    result = classifier(text, tags, multi_class=True)
+    embed = Embed(title="Classification done:")
+    embed.add_field(name="Original:", value=f"{text}", inline=False)
+    tagNum = 0
+    for label in result["labels"]:
+        percent = str(round(result["scores"][tagNum] * 100)) + "%"
+        embed.add_field(name=f"{label}:", value=f"{percent}", inline=True)
+        tagNum += 1
+    await ctx.send(embed=embed)
+
 
 with open("token.txt", "r") as token:
     bot.run(token.read())
