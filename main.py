@@ -14,6 +14,7 @@ summarizerfile = open("models/summarizer.aimodel", "w+b")
 textgeneratorfile = open("models/textgenerator.aimodel", "w+b")
 toxicfile = open("models/toxic.aimodel", "w+b")
 classifierfile = open("models/classifier.aimodel", "w+b")
+answerfile = open("models/answer.aimodel", "w+b")
 
 if "models/unmasker.aimodel" in models:
     unmasker = pickle.load(unmaskerfile)
@@ -44,6 +45,12 @@ if "models/classifier.aimodel" in models:
 else:
     classifier = transformers.pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
     pickle.dump(classifier, classifierfile)
+
+if "models/answer.aimodel" in models:
+    answering = pickle.load(answerfile)
+else:
+    answering = transformers.pipeline("question-answering", model="deepset/xlm-roberta-base-squad2")
+    pickle.dump(answering, answerfile)
 
 db = at.Airtable('appWlNWcMJ1Yj3qCQ', 'keylqCeR5Mr62P71A')
 
@@ -378,6 +385,34 @@ async def classifiercmd(
         tagNum += 1
     await ctx.send(embed=embed)
 
+
+@bot.slash_command(
+    name="answer",
+    description="Get an answer from a context",
+    dm_permission=True
+)
+async def answer(
+        ctx: Interaction,
+        question: str = SlashOption(
+            name="question",
+            description="The question you want to answer"
+        ),
+        context: str = SlashOption(
+            name="context",
+            description="The context for the question"
+        )
+):
+    interactionResponse = ctx.response
+    await interactionResponse.defer(ephemeral=False, with_message=True)
+    result = answering({"question": question, "context": context})
+    score = str(round(result["score"] * 100)) + "%"
+    correctanswer = result["answer"]
+    embed = Embed(title="Answered:")
+    embed.add_field(name="Question:", value=f"{question}", inline=False)
+    embed.add_field(name="Context:", value=f"{context}", inline=False)
+    embed.add_field(name="Answer:", value=f"{correctanswer}", inline=True)
+    embed.add_field(name="Score:", value=f"{score}", inline=True)
+    await ctx.send(embed=embed)
 
 with open("token.txt", "r") as token:
     bot.run(token.read())
